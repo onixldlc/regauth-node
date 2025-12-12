@@ -1,0 +1,29 @@
+services:
+  registry:
+    image: registry:2
+    container_name: registry
+    environment:
+      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /var/lib/registry
+      REGISTRY_AUTH: htpasswd
+      REGISTRY_AUTH_HTPASSWD_REALM: Registry Realm
+      REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
+    volumes:
+      - ./registry/data:/var/lib/registry:z
+      - ./registry/auth:/auth:z
+
+  authenticator:
+    build: ./authenticator
+    container_name: authenticator
+    volumes:
+      - ./authenticator:/data:z
+      - ./registry/auth:/registry-auth:z
+    depends_on:
+      - registry
+
+  caddy:
+    image: caddy:latest
+    container_name: caddy
+    ports:
+      - "5000:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:z
