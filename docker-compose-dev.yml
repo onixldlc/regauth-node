@@ -12,7 +12,7 @@ services:
       - ./registry/auth:/auth:z
 
   authenticator:
-    image: ghcr.io/onixldlc/regauth-node:latest
+    build: ./authenticator
     container_name: authenticator
     volumes:
       - ./authenticator:/data:z
