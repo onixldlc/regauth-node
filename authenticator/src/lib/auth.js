@@ -1,6 +1,7 @@
 import fs from 'fs';
-import crypto from 'crypto';
+import crypto, { hash } from 'crypto';
 import * as logger from './logger.js';
+import { getHashAlgorithm } from './config.js';
 
 const AUTH_FILE = '/data/auth.json';
 const PAT_REGEX = /^MYCR_[A-Za-z0-9]{32}$/;
@@ -8,7 +9,7 @@ const PAT_REGEX = /^MYCR_[A-Za-z0-9]{32}$/;
 let credentials = { credential: [] };
 
 export function hashPassword(password) {
-  return crypto.createHash('sha1').update(password).digest('hex');
+  return crypto.createHash(getHashAlgorithm()).update(password).digest('hex');
 }
 
 export function isValidPat(password) {

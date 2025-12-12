@@ -26,6 +26,7 @@ services:
       AUTH_BLACKLIST: '[]'             # optional
       AUTH_CONFIG: '/data/config.json' # optional
       AUTH_APIKEY: 'randomlygenerated' # optional
+      AUTH_HASH: 'sha256'              # optional | supported algo: ['sha512', 'sha256', 'md5']
 
   caddy:
     image: caddy:latest

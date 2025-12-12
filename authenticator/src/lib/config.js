@@ -8,6 +8,7 @@ const DEFAULT_CONFIG = {
   apikey: null,
   whitelist: [],
   blacklist: [],
+  hashAlgorithm: null,
   sharedCreds: null
 };
 
@@ -122,6 +123,21 @@ export function removeFromBlacklist(entry) {
     saveConfig();
     logger.info('config', `Removed '${entry}' from blacklist`);
   }
+}
+
+export function setHashAlgorithm(algorithm) {
+  allowedAlgorithms = ['sha512', 'sha256', 'md5'];
+  if (!allowedAlgorithms.includes(algorithm)) {
+    logger.warn('config', `Invalid hash algorithm '${algorithm}' provided, falling back to 'sha256'`);
+    algorithm = 'sha256';
+  }
+  config.hashAlgorithm = algorithm;
+  saveConfig();
+  logger.info('config', `Set hash algorithm to '${algorithm}'`);
+}
+
+export function getHashAlgorithm() {
+  return config.hashAlgorithm;
 }
 
 export function getSharedCreds() {

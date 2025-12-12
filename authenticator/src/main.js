@@ -3,7 +3,7 @@ import { loadCredentials } from './lib/auth.js';
 import { initHtpasswd } from './lib/htpasswd.js';
 import { handleApiRequest } from './lib/api.js';
 import { handleProxyRequest } from './lib/proxy.js';
-import { loadConfig, checkAccess, getApiKey, setApiKey, setWhitelist, setBlacklist } from './lib/config.js';
+import { loadConfig, checkAccess, getApiKey, setApiKey, setWhitelist, setBlacklist, setHashAlgorithm } from './lib/config.js';
 import * as logger from './lib/logger.js';
 
 const PORT = process.env.PORT || 5000;
@@ -24,6 +24,8 @@ function parseArgs() {
       try {
         parsed.blacklist = JSON.parse(args[++i]);
       } catch { parsed.blacklist = []; }
+    } else if (args[i] === '--hash' && args[i + 1]) {
+      parsed.hash = args[++i];
     } else if (args[i] === '--config' && args[i + 1]) {
       parsed.configPath = args[++i];
     }
@@ -49,6 +51,10 @@ async function init() {
   if (args.blacklist && Array.isArray(args.blacklist)) {
     setBlacklist(args.blacklist);
     logger.info('init', `Blacklist set from CLI: ${args.blacklist.length} entries`);
+  }
+  if (args.hash) {
+    setHashAlgorithm(args.hash);
+    logger.info('init', `Using hash algorithm from CLI: ${args.hash}`);
   }
   
   apiToken = getApiKey();

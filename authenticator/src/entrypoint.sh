@@ -4,6 +4,7 @@ AUTH_APIKEY=${AUTH_APIKEY:-""}
 AUTH_WHITELIST=${AUTH_WHITELIST:-""}
 AUTH_BLACKLIST=${AUTH_BLACKLIST:-""}
 AUTH_CONFIG=${AUTH_CONFIG:-""}
+AUTH_HASH=${AUTH_HASH:-""}
 
 ARGS=""
 
@@ -24,6 +25,7 @@ if [ ! -f "/data/config.json" ]; then
 	else
 		echo "[entrypoint] Using provided AUTH_WHITELIST: $AUTH_WHITELIST"
 	fi
+	echo "whitelist: $AUTH_WHITELIST"
 	ARGS="--whitelist ${AUTH_WHITELIST} ${ARGS}"
 
 	if [ -z "${AUTH_BLACKLIST}" ]; then
@@ -32,15 +34,26 @@ if [ ! -f "/data/config.json" ]; then
 	else
 		echo "[entrypoint] Using provided AUTH_BLACKLIST: $AUTH_BLACKLIST"
 	fi
+	echo "blacklist: $AUTH_BLACKLIST"
 	ARGS="--blacklist ${AUTH_BLACKLIST} ${ARGS}"
 
-	if [ -n "$AUTH_CONFIG" ]; then
-		echo "[entrypoint] Using provided AUTH_CONFIG"
-		echo "$AUTH_CONFIG" > /data/config.json
+	if [ -z "$AUTH_HASH" ]; then
+		AUTH_HASH="sha256"
+		echo "[entrypoint] No AUTH_HASH provided, using defaults"
 	else
-		echo "[entrypoint] No AUTH_CONFIG provided, using defaults"
+		echo "[entrypoint] Using provided AUTH_HASH"
 	fi
-	ARGS="--config /data/config.json ${ARGS}"
+	echo "algorithm: $AUTH_HASH"
+	ARGS="--hash ${AUTH_HASH} ${ARGS}"
+
+	if [ -z "$AUTH_CONFIG" ]; then
+		AUTH_CONFIG="/data/config.json"
+		echo "[entrypoint] No AUTH_CONFIG provided, using defaults"
+	else
+		echo "[entrypoint] Using provided AUTH_CONFIG"
+	fi
+	echo "config path: $AUTH_CONFIG"
+	ARGS="--config ${AUTH_CONFIG} ${ARGS}"
 else
 	echo "[entrypoint] Using existing config.json in /data"
 fi
