@@ -19,6 +19,13 @@ services:
       - ./registry/auth:/registry-auth:z
     depends_on:
       - registry
+    environment:
+      REGISTRY_HOST: registry
+      REGISTRY_PORT: 5000
+      AUTH_WHITELIST: '[]'             # optional
+      AUTH_BLACKLIST: '[]'             # optional
+      AUTH_CONFIG: '/data/config.json' # optional
+      AUTH_APIKEY: 'randomlygenerated' # optional
 
   caddy:
     image: caddy:latest
