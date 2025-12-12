@@ -2,7 +2,7 @@ import fs from 'fs';
 import crypto from 'crypto';
 import * as logger from './logger.js';
 
-const CONFIG_FILE = '/data/config.json';
+let CONFIG_FILE = '/data/config.json';
 
 const DEFAULT_CONFIG = {
   apikey: null,
@@ -23,13 +23,16 @@ function generateRandomString(length = 32) {
   return result;
 }
 
-export function loadConfig() {
+export function loadConfig(configPath) {
+  if (configPath) {
+    CONFIG_FILE = configPath;
+  }
   try {
     if (fs.existsSync(CONFIG_FILE)) {
       const data = fs.readFileSync(CONFIG_FILE, 'utf8');
       const loaded = JSON.parse(data);
       config = { ...DEFAULT_CONFIG, ...loaded };
-      logger.info('config', `Loaded config: whitelist=${config.whitelist.length}, blacklist=${config.blacklist.length}`);
+      logger.info('config', `Loaded config from ${CONFIG_FILE}: whitelist=${config.whitelist.length}, blacklist=${config.blacklist.length}`);
     } else {
       config = { ...DEFAULT_CONFIG };
       config.apikey = generateRandomString(32);
