@@ -1,0 +1,101 @@
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'authenticator/**'
+      - '.github/workflows/image-builder.yml'
+  workflow_dispatch:
+    inputs:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  BASE_VERSION: "1.0.0"
+
+jobs:
+  get-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          TAGS=$(skopeo list-tags docker://ghcr.io/${{ github.repository }} 2>/dev/null | jq -r '.Tags[]?' || echo "")
+          
+          echo "Found tags: [$TAGS]"
+          
+          # Find highest revision number for current base version
+          HIGHEST_REV=0
+          for tag in $TAGS; do
+            echo "Checking tag: $tag"
+            if [[ $tag =~ ^${BASE_VERSION}-r([0-9]+)$ ]]; then
+              REV=${BASH_REMATCH[1]}
+              echo "  -> Matched! Revision: $REV"
+              if [[ $REV -gt $HIGHEST_REV ]]; then
+                HIGHEST_REV=$REV
+              fi
+            fi
+          done
+          
+          # Increment revision
+          NEXT_REV=$((HIGHEST_REV + 1))
+          NEW_VERSION="${BASE_VERSION}-r${NEXT_REV}"
+          
+          echo "========================================"
+          echo "RESULT: version=${NEW_VERSION}"
+          echo "Previous highest revision: r${HIGHEST_REV}"
+          echo "========================================"
+          
+          echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+
+
+  build:
+    runs-on: ubuntu-latest
+    needs: get-version
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}
+          tags: |
+            type=raw,value=${{ needs.get-version.outputs.version }}
+            type=raw,value=latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./authenticator
+          file: ./authenticator/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Summary
+        run: |
+          echo "**Image:** \`${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ github.repository }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** \`${{ needs.get-version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Tags:** \`${{ needs.get-version.outputs.version }}\`, \`latest\`" >> $GITHUB_STEP_SUMMARY
